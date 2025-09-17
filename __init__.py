@@ -1,4 +1,8 @@
+import torch
 import safetensors.torch
+import comfy
+import comfy.utils
+from comfy.utils import load_torch_file
 
 _load_file_org = safetensors.torch.load_file
 
@@ -17,10 +21,6 @@ safetensors.torch.load_file = _load_file_for_wsl
 
 # New workaround for slow loading
 
-import comfy
-import comfy.utils
-from comfy.utils import load_torch_file
-import torch
 
 # currently unused unlike above, however keeping it for future robust solution
 _load_torch_file_org = comfy.utils.load_torch_file

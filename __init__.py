@@ -20,13 +20,14 @@ safetensors.torch.load_file = _load_file_for_wsl
 import comfy
 import comfy.utils
 from comfy.utils import load_torch_file
+import torch
 
 # currently unused unlike above, however keeping it for future robust solution
 _load_torch_file_org = comfy.utils.load_torch_file
 
 def load_torch_file_for_slow(ckpt, safe_load=False, device=None, return_metadata=False):
     if device is None:
-        device = safetensors.torch.device("cpu")
+        device = torch.device("cpu")
     metadata = None
     if ckpt.lower().endswith(".safetensors") or ckpt.lower().endswith(".sft"):
         sd = safetensors.torch.load(open(ckpt, 'rb').read())

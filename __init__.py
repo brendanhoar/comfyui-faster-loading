@@ -26,15 +26,15 @@ _load_torch_file_org = comfy.utils.load_torch_file
 
 def load_torch_file_for_slow(ckpt, safe_load=False, device=None, return_metadata=False):
     if device is None:
-        device = torch.device("cpu")
+        device = safetensors.torch.device("cpu")
     metadata = None
     if ckpt.lower().endswith(".safetensors") or ckpt.lower().endswith(".sft"):
         sd = safetensors.torch.load(open(ckpt, 'rb').read())
     else:
         if safe_load or ALWAYS_SAFE_LOAD:
-            pl_sd = torch.load(ckpt, map_location=device, weights_only=True)
+            pl_sd = safetensors.torch.load(ckpt, map_location=device, weights_only=True)
         else:
-            pl_sd = torch.load(ckpt, map_location=device, pickle_module=comfy.checkpoint_pickle)
+            pl_sd = safetensors.torch.load(ckpt, map_location=device, pickle_module=comfy.checkpoint_pickle)
         if "global_step" in pl_sd:
             logging.debug(f"Global Step: {pl_sd['global_step']}")
         if "state_dict" in pl_sd:

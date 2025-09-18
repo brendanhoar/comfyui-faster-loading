@@ -24,9 +24,6 @@ safetensors.torch.load_file = _load_file_for_wsl
 _load_torch_file_org = comfy.utils.load_torch_file
 
 def _load_torch_file_with_precache(ckpt, safe_load=False, device=None, return_metadata=False):
-	if device is None:
-		device = torch.device("cpu")
-	metadata = None
 	if ckpt.lower().endswith(".safetensors") or ckpt.lower().endswith(".sft"):
 		with open(ckpt, "rb") as f:
 			sd_cache= safetensors.torch.load(f.read())

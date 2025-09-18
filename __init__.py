@@ -21,10 +21,24 @@ safetensors.torch.load_file = _load_file_for_wsl
 
 # New workaround for slow loading
 
-
-# currently unused unlike above, however keeping it for future robust solution
 _load_torch_file_org = comfy.utils.load_torch_file
 
+def _load_torch_file_with_precache(ckpt, safe_load=False, device=None, return_metadata=False):
+    if device is None:
+        device = torch.device("cpu")
+    metadata = None
+    if ckpt.lower().endswith(".safetensors") or ckpt.lower().endswith(".sft"):
+		if device == "cpu":
+			with open(ckpt, "rb") as f:
+				sd_cache= safetensors.torch.load(f.read())
+
+	#we don't need to keep the sd_cache object, we just want to force the OS to cache the file, so that invoking the normal path below will avoid the actual drive IO.
+    #this may incur a memory penalty during load.
+
+	return _load_torch_file_org(ckpt, safe_load=False, device=None, return_metadata=False):
+
+'''
+# this commented out patch fails in some circumstances, to be discarded
 def load_torch_file_for_slow(ckpt, safe_load=False, device=None, return_metadata=False):
     if device is None:
         device = torch.device("cpu")
@@ -49,8 +63,9 @@ def load_torch_file_for_slow(ckpt, safe_load=False, device=None, return_metadata
             else:
                 sd = pl_sd
     return (sd, metadata) if return_metadata else sd
+'''
 
-comfy.utils.load_torch_file = load_torch_file_for_slow
+comfy.utils.load_torch_file = _load_torch_file_with_precache
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}

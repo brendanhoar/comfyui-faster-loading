@@ -35,7 +35,7 @@ def _load_torch_file_with_precache(ckpt, safe_load=False, device=None, return_me
 	#we don't need to keep the sd_cache object, we just want to force the OS to cache the file, so that invoking the normal path below will avoid the actual drive IO.
     #this may incur a memory penalty during load.
 
-	return _load_torch_file_org(ckpt, safe_load=False, device=None, return_metadata=False):
+	return _load_torch_file_org(ckpt, safe_load=False, device=None, return_metadata=False)
 
 '''
 # this commented out patch fails in some circumstances, to be discarded

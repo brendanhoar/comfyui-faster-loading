@@ -8,5 +8,5 @@ See https://github.com/comfyanonymous/ComfyUI/issues/1992.
 
 ```
 cd ComfyUI/custom_nodes
-git clone https://github.com/nonnonstop/comfyui-faster-loading.git
+git clone https://github.com/brendanhoar/comfyui-faster-loading.git
 ```

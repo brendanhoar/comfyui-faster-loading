@@ -28,9 +28,8 @@ def _load_torch_file_with_precache(ckpt, safe_load=False, device=None, return_me
 		device = torch.device("cpu")
 	metadata = None
 	if ckpt.lower().endswith(".safetensors") or ckpt.lower().endswith(".sft"):
-		if device == "cpu":
-			with open(ckpt, "rb") as f:
-				sd_cache= safetensors.torch.load(f.read())
+		with open(ckpt, "rb") as f:
+			sd_cache= safetensors.torch.load(f.read())
 
 	#we don't need to keep the sd_cache object, we just want to force the OS to cache the file, so that invoking the normal path below will avoid the actual drive IO.
     #this may incur a memory penalty during load.

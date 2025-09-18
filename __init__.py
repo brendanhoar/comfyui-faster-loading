@@ -27,7 +27,7 @@ def _load_torch_file_with_precache(ckpt, safe_load=False, device=None, return_me
 	if device is None:
 		device = torch.device("cpu")
 	metadata = None
-    if ckpt.lower().endswith(".safetensors") or ckpt.lower().endswith(".sft"):
+	if ckpt.lower().endswith(".safetensors") or ckpt.lower().endswith(".sft"):
 		if device == "cpu":
 			with open(ckpt, "rb") as f:
 				sd_cache= safetensors.torch.load(f.read())

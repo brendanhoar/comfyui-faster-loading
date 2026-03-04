@@ -10,6 +10,7 @@ import re
 import sys
 import ctypes
 
+import logging
 import builtins
 
 # Save the original mmap constructor

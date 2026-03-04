@@ -1,3 +1,9 @@
+import time
+import torch
+import safetensors.torch
+import comfy
+import comfy.utils
+
 import mmap
 import os
 import re
@@ -68,3 +74,7 @@ def patched_mmap(fileno, length, *args, **kwargs):
 
 # Apply the monkeypatch
 mmap.mmap = patched_mmap
+
+NODE_CLASS_MAPPINGS = {}
+NODE_DISPLAY_NAME_MAPPINGS = {}
+

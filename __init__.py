@@ -61,18 +61,18 @@ def patched_mmap(fileno, length, *args, **kwargs):
             try:
                 prefetch_virtual_memory(mm)
                 if os.name == 'nt':
-                    print(f"Applied PrefetchVirtualMemory to: {fname}")
+                    logging.debug(f"Applied PrefetchVirtualMemory to: {fname}")
                 else:
-                    print(f"Applied MADV_WILLNEED to: {fname}")
+                    logging.debug(f"Applied MADV_WILLNEED to: {fname}")
             except Exception as e:
                 if os.name == 'nt':
-                    print(f"PrefetchVirtualMemory failed for {fname}: {e}")
+                    logging.debug(f"PrefetchVirtualMemory failed for {fname}: {e}")
                 else:
-                    print(f"MADV_WILLNEED marking failed for {fname}: {e}")
+                    logging.debug(f"MADV_WILLNEED marking failed for {fname}: {e}")
         else:
-            print(f"mmap() was called on a file, but it did not match the faster-loading file pattern.")
+            logging.debug(f"mmap() was called on a file, but it did not match the faster-loading file pattern.")
     else:
-        print(f"mmap() was called, but not on a file object.")
+        logging.debug(f"mmap() was called, but not on a file object.")
     return mm
 
 # Apply the monkeypatch

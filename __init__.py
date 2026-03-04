@@ -130,6 +130,30 @@ builtins.open = tracked_open
 # 
 # print("Active after 'with' block:", active_files)
 
+_load_torch_file_org = comfy.utils.load_torch_file
+
+def _load_torch_file_with_precache(ckpt, safe_load=False, device=None, return_metadata=False):
+    if ckpt.lower().endswith(".safetensors") or ckpt.lower().endswith(".sft"):
+        #start=time.time()
+        #print("Starting to preload model {0}".format(ckpt))
+        #with open(ckpt, "rb") as f:
+        #	#sd_cache= f.read() # why store the value in RAM if we're not using it directly? f.read() can just...read the file without storing the data locally...that should be sufficient to load the OS cache if no memory pressure, yes?
+        #	f.read() # in the future, perhaps replace with an mmap handle with, if available, MADV_SEQUENTIAL and MADV_WILLNEED to encourage large chunking and readahead before calling load_torch_file, which invokes the slow safetensors methods.
+        #end=time.time()
+        #print("Completed preload in {0} seconds. Preloaded model: {1}".format(end-start,ckpt))
+        #we don't need to keep the sd_cache object, we just want to force the OS to cache the file, so that invoking the normal path below will avoid the actual drive IO.
+        #this may incur a memory penalty during load.
+        f = open(ckpt, "rb")
+        logging.debug(f"Starting to mmap {f.filename}")
+        m = mmap(f.fileno(), length=0, access=ACCESS_READ)
+        logging.debug(f"Passing {f.filename} to torch_load_file")
+        t = _load_torch_file_org(ckpt, safe_load, device, return_metadata) 
+        logging.debug(f"Returned from torch_load_file of {f.filename}")
+        m.close()
+        f.close()
+    return t
+
+comfy.utils.load_torch_file = _load_torch_file_with_precache
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}

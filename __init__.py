@@ -54,9 +54,9 @@ def patched_mmap(fileno, length, *args, **kwargs):
         if fname and re.match(pattern, fname, re.IGNORECASE):
             try:
                 prefetch_virtual_memory(mm)
-		        if os.name == 'nt':
+                if os.name == 'nt':
                     print(f"Applied PrefetchVirtualMemory to: {fname}")
-		        else:
+                else:
                     print(f"Applied MADV_WILLNEED to: {fname}")
             except Exception as e:
                 if os.name == 'nt':
@@ -64,7 +64,7 @@ def patched_mmap(fileno, length, *args, **kwargs):
                 else:
                     print(f"MADV_WILLNEED marking failed for {fname}: {e}")
 
-	return mm
+    return mm
 
 # Apply the monkeypatch
 mmap.mmap = patched_mmap

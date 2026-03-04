@@ -14,7 +14,7 @@ import logging
 import builtins
 
 # Save the original mmap constructor
-_original_mmap = mmap.mmap
+_original_mmap = mmap
 
 def get_filename_from_fd(fd):
     """Retrieves the absolute path of a file descriptor."""
@@ -80,7 +80,7 @@ def patched_mmap(fileno, length, *args, **kwargs):
     return mm
 
 # Apply the monkeypatch
-mmap.mmap = patched_mmap
+mmap = patched_mmap
 
 # I need to track the mode flags to be sure I don't apply any of this to writeable file descriptors.
 

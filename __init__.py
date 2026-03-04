@@ -49,6 +49,7 @@ def prefetch_virtual_memory(mm_obj):
 def patched_mmap(fileno, length, *args, **kwargs):
     """Wrapper that checks filename patterns before prefetching."""
     # 1. Call original mmap to create the object
+    logging.debug(f"calling original mmap()")
     mm = _original_mmap(fileno, length, *args, **kwargs)
     
     # 2. Pattern to match (e.g., all .dat or .bin files)

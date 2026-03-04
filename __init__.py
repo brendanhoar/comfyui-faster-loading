@@ -1,72 +1,70 @@
-import time
-import torch
-import safetensors.torch
-import comfy
-import comfy.utils
-from comfy.utils import load_torch_file
+import mmap
+import os
+import re
+import sys
+import ctypes
 
-_load_file_org = safetensors.torch.load_file
+# Save the original mmap constructor
+_original_mmap = mmap.mmap
 
-
-def _load_file_for_wsl(filename, device="cpu", *args, **kwargs):
+def get_filename_from_fd(fd):
+    """Retrieves the absolute path of a file descriptor."""
     try:
-        if device == "cpu":
-            with open(filename, "rb") as f:
-                return safetensors.torch.load(f.read())
+        if os.name == 'nt':
+            # On Windows, we can use the Win32 API via ctypes or a helper
+            import msvcrt
+            from ctypes import wintypes
+            handle = msvcrt.get_osfhandle(fd)
+            buf = ctypes.create_unicode_buffer(wintypes.MAX_PATH)
+            ctypes.windll.kernel32.GetFinalPathNameByHandleW(handle, buf, wintypes.MAX_PATH, 0)
+            return buf.value
+        else:
+            # On Linux/macOS, read from /proc/self/fd/
+            return os.readlink(f"/proc/self/fd/{fd}")
     except Exception:
-        pass
-    return _load_file_org(filename, device, *args, **kwargs)
+        return None
 
-
-safetensors.torch.load_file = _load_file_for_wsl
-
-# New workaround for slow loading
-
-_load_torch_file_org = comfy.utils.load_torch_file
-
-def _load_torch_file_with_precache(ckpt, safe_load=False, device=None, return_metadata=False):
-	if ckpt.lower().endswith(".safetensors") or ckpt.lower().endswith(".sft"):
-		start=time.time()
-		print("Starting to preload model {0}".format(ckpt))
-		with open(ckpt, "rb") as f:
-			#sd_cache= f.read() # why store the value in RAM if we're not using it directly? f.read() can just...read the file without storing the data locally...that should be sufficient to load the OS cache if no memory pressure, yes?
-			f.read() # in the future, perhaps replace with an mmap handle with, if available, MADV_SEQUENTIAL and MADV_WILLNEED to encourage large chunking and readahead before calling load_torch_file, which invokes the slow safetensors methods.
-		end=time.time()
-		print("Completed preload in {0} seconds. Preloaded model: {1}".format(end-start,ckpt))
-	#we don't need to keep the sd_cache object, we just want to force the OS to cache the file, so that invoking the normal path below will avoid the actual drive IO.
-    #this may incur a memory penalty during load.
-
-	return _load_torch_file_org(ckpt, safe_load, device, return_metadata)
-
-'''
-# this commented out patch fails in some circumstances, to be discarded
-def load_torch_file_for_slow(ckpt, safe_load=False, device=None, return_metadata=False):
-    if device is None:
-        device = torch.device("cpu")
-    metadata = None
-    if ckpt.lower().endswith(".safetensors") or ckpt.lower().endswith(".sft"):
-        sd = safetensors.torch.load(open(ckpt, 'rb').read())
+def prefetch_virtual_memory(mm_obj):
+    """Applies OS-specific prefetch hints."""
+    if os.name == 'nt':
+        from ctypes import wintypes
+        class WIN32_MEMORY_RANGE_ENTRY(ctypes.Structure):
+            _fields_ = [("VirtualAddress", wintypes.LPVOID), ("NumberOfBytes", ctypes.c_size_t)]
+        
+        kernel32 = ctypes.WinDLL('kernel32', use_last_error=True)
+        # -1 is the pseudo-handle for current process
+        entry = WIN32_MEMORY_RANGE_ENTRY()
+        entry.VirtualAddress = ctypes.cast(ctypes.addressof(ctypes.c_char.from_buffer(mm_obj)), ctypes.c_void_p)
+        entry.NumberOfBytes = len(mm_obj)
+        kernel32.PrefetchVirtualMemory(kernel32.GetCurrentProcess(), 1, ctypes.byref(entry), 0)
     else:
-        if safe_load or ALWAYS_SAFE_LOAD:
-            pl_sd = safetensors.torch.load(ckpt, map_location=device, weights_only=True)
-        else:
-            pl_sd = safetensors.torch.load(ckpt, map_location=device, pickle_module=comfy.checkpoint_pickle)
-        if "global_step" in pl_sd:
-            logging.debug(f"Global Step: {pl_sd['global_step']}")
-        if "state_dict" in pl_sd:
-            sd = pl_sd["state_dict"]
-        else:
-            if len(pl_sd) == 1:
-                key = list(pl_sd.keys())[0]
-                sd = pl_sd[key]
-                if not isinstance(sd, dict):
-                    sd = pl_sd
-            else:
-                sd = pl_sd
-    return (sd, metadata) if return_metadata else sd
-'''
+        mm_obj.madvise(mmap.MADV_WILLNEED)
 
-comfy.utils.load_torch_file = _load_torch_file_with_precache
+def patched_mmap(fileno, length, *args, **kwargs):
+    """Wrapper that checks filename patterns before prefetching."""
+    # 1. Call original mmap to create the object
+    mm = _original_mmap(fileno, length, *args, **kwargs)
+    
+    # 2. Pattern to match (e.g., all .dat or .bin files)
+    pattern = r".*\.(safetensors|sft|gguf|bin|pt)$"
+    
+    # 3. Check if fileno is a valid file (not -1 for anonymous memory)
+    if fileno != -1:
+        fname = get_filename_from_fd(fileno)
+        if fname and re.match(pattern, fname, re.IGNORECASE):
+            try:
+                prefetch_virtual_memory(mm)
+				if os.name == 'nt':
+                	print(f"Applied PrefetchVirtualMemory to: {fname}")
+				else:
+					print(f"Applied MADV_WILLNEED to: {fname}")
+            except Exception as e:
+				if os.name == 'nt':
+                	print(f"PrefetchVirtualMemory failed for {fname}: {e}")
+				else:
+					print(f"MADV_WILLNEED marking failed for {fname}: {e}")
+                
+    return mm
 
-NODE_CLASS_MAPPINGS = {}
-NODE_DISPLAY_NAME_MAPPINGS = {}
+# Apply the monkeypatch
+mmap.mmap = patched_mmap

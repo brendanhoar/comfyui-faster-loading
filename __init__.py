@@ -4,7 +4,7 @@ import safetensors.torch
 import comfy
 import comfy.utils
 
-import mmap
+from mmap import mmap, ACCESS_READ
 import os
 import re
 import sys
@@ -145,7 +145,7 @@ def _load_torch_file_with_precache(ckpt, safe_load=False, device=None, return_me
         #this may incur a memory penalty during load.
         f = open(ckpt, "rb")
         logging.debug(f"Starting to mmap {ckpt}")
-        m = mmap(f.fileno(), length=0, access=mmap.ACCESS_READ)
+        m = mmap(f.fileno(), length=0, access=ACCESS_READ)
         logging.debug(f"Passing {ckpt} to torch_load_file")
         t = _load_torch_file_org(ckpt, safe_load, device, return_metadata) 
         logging.debug(f"Returned from torch_load_file of {ckpt}")

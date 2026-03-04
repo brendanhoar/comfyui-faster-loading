@@ -144,11 +144,11 @@ def _load_torch_file_with_precache(ckpt, safe_load=False, device=None, return_me
         #we don't need to keep the sd_cache object, we just want to force the OS to cache the file, so that invoking the normal path below will avoid the actual drive IO.
         #this may incur a memory penalty during load.
         f = open(ckpt, "rb")
-        logging.debug(f"Starting to mmap {f.filename}")
+        logging.debug(f"Starting to mmap {ckpt}")
         m = mmap(f.fileno(), length=0, access=ACCESS_READ)
-        logging.debug(f"Passing {f.filename} to torch_load_file")
+        logging.debug(f"Passing {ckpt} to torch_load_file")
         t = _load_torch_file_org(ckpt, safe_load, device, return_metadata) 
-        logging.debug(f"Returned from torch_load_file of {f.filename}")
+        logging.debug(f"Returned from torch_load_file of {ckpt}")
         m.close()
         f.close()
     return t

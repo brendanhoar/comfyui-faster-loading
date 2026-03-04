@@ -52,7 +52,7 @@ def patched_mmap(fileno, length, *args, **kwargs):
     mm = _original_mmap(fileno, length, *args, **kwargs)
     
     # 2. Pattern to match (e.g., all .dat or .bin files)
-    pattern = r".*\.(safetensors|sft|gguf|bin|pt)$"
+    pattern = r".*\.(safetensors|sft|gguf|bin|pt|ckpt)$"
     
     # 3. Check if fileno is a valid file (not -1 for anonymous memory)
     if fileno != -1:

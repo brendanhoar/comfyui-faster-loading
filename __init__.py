@@ -4,7 +4,7 @@ import safetensors.torch
 import comfy
 import comfy.utils
 
-from mmap import mmap, ACCESS_READ, PROT_READ
+from mmap import mmap, ACCESS_READ
 import os
 import re
 import sys

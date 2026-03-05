@@ -3,6 +3,7 @@ import torch
 import safetensors.torch
 import comfy
 import comfy.utils
+from blake3 import blake3
 from app.assets.hashing import _hash_file_object
 
 from mmap import mmap, ACCESS_READ, ACCESS_COPY

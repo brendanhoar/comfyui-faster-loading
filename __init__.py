@@ -48,6 +48,7 @@ def prefetch_virtual_memory(mm_obj):
         kernel32.PrefetchVirtualMemory(kernel32.GetCurrentProcess(), 1, ctypes.byref(entry), 0)
     else:
         mm_obj.madvise(mmap.MADV_WILLNEED)
+    return
 
 def patched_mmap(fileno, length, *args, **kwargs):
     """Wrapper that checks filename patterns before prefetching."""

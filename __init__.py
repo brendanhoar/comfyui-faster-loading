@@ -190,7 +190,7 @@ safetensors.torch.load_file = _load_file_for_wsl
 
 DEFAULT_CHUNK = 8 * 1024 *1024 # 8MB
 
-_patched_hash_file_object = app.assets.hashing._hash_file_object
+_patched_hash_file_obj = app.assets.hashing._hash_file_obj
 
 def _hash_file_obj_precache(file_obj, chunk_size) -> str:
     fileno=file_obj.fileno()       
@@ -213,12 +213,12 @@ def _hash_file_obj_precache(file_obj, chunk_size) -> str:
             print(f"mmap() was called on a file, but it did not match the faster-loading file pattern.")
     else:
         print(f"mmap() was called, but not on a file object.")
-    hfo = _hash_file_object(file_obj, chunk_size) 
+    hfo = _patched_hash_file_obj(file_obj, chunk_size) 
     if mm:
         mm.close()
     return hfo
 
-app.assets.hashing._hash_file_object = _hash_file_object_precache
+app.assets.hashing._hash_file_obj = _hash_file_obj_precache
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}

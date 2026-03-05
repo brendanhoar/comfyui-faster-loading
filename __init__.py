@@ -21,7 +21,7 @@ import asyncio
 import sys
 from unittest.mock import MagicMock
 sys.modules["blake3"] = MagicMock()
-from app.assets.hashing import _hash_file_object
+import app.assets.hashing
 
 prefetch_pattern = r".*\.(safetensors|sft|gguf|bin|pt|ckpt)$"
 
@@ -190,7 +190,7 @@ safetensors.torch.load_file = _load_file_for_wsl
 
 DEFAULT_CHUNK = 8 * 1024 *1024 # 8MB
 
-_patched_hash_file_object = _hash_file_object
+_patched_hash_file_object = app.assets.hashing._hash_file_object
 
 def _hash_file_obj_precache(file_obj, chunk_size) -> str:
     fileno=file_obj.fileno()       
@@ -218,7 +218,7 @@ def _hash_file_obj_precache(file_obj, chunk_size) -> str:
         mm.close()
     return hfo
 
-_hash_file_object = _hash_file_object_precache
+app.assets.hashing._hash_file_object = _hash_file_object_precache
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}

@@ -14,7 +14,6 @@ import ctypes
 import logging
 import builtins
 
-from blake3 import blake3
 from typing import IO
 import os
 import asyncio

@@ -4,7 +4,7 @@ import safetensors.torch
 import comfy
 import comfy.utils
 
-from mmap import mmap, ACCESS_READ
+from mmap import mmap, ACCESS_READ, PROT_READ
 import os
 import re
 import sys
@@ -145,7 +145,10 @@ def _load_torch_file_with_precache(ckpt, safe_load=False, device=None, return_me
         #this may incur a memory penalty during load.
         f = open(ckpt, "rb")
         logging.debug(f"Starting to mmap {ckpt}")
-        m = mmap(f.fileno(), length=0, access=ACCESS_READ)
+        if os.name == 'nt':
+            m = mmap(f.fileno(), length=0, access=ACCESS_READ)
+        else:
+            m = mmap(f.fileno(), length=0, access=PROT_READ)
         logging.debug(f"Passing {ckpt} to torch_load_file")
         t = _load_torch_file_org(ckpt, safe_load, device, return_metadata) 
         logging.debug(f"Returned from torch_load_file of {ckpt}")
@@ -154,6 +157,24 @@ def _load_torch_file_with_precache(ckpt, safe_load=False, device=None, return_me
     return t
 
 comfy.utils.load_torch_file = _load_torch_file_with_precache
+
+_load_file_org = safetensors.torch.load_file
+
+
+def _load_file_for_wsl(filename, device="cpu", *args, **kwargs):
+    try:
+        if device == "cpu":
+            with open(filename, "rb") as f:
+                logging.debug(f"Calling torch.load and passing f.read() of {ckpt}")
+                return safetensors.torch.load(f.read())
+                logging.debug(f"Returned from torch.load and passing f.read() of {ckpt}")
+    except Exception:
+        pass
+    return _load_file_org(filename, device, *args, **kwargs)
+
+
+safetensors.torch.load_file = _load_file_for_wsl
+
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}

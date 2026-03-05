@@ -3,7 +3,7 @@ import torch
 import safetensors.torch
 import comfy
 import comfy.utils
-import app.assets.hashing as hashing
+import app.assets.hashing
 
 from mmap import mmap, ACCESS_READ, ACCESS_COPY
 import os
@@ -185,7 +185,7 @@ safetensors.torch.load_file = _load_file_for_wsl
 
 DEFAULT_CHUNK = 8 * 1024 *1024 # 8MB
 
-_patched_hash_file_object = hashing._hash_file_object
+_patched_hash_file_object = app.assets.hashing._hash_file_object
 
 def _hash_file_obj_precache(file_obj, chunk_size) -> str:
     fileno=file_obj.fileno()       
@@ -213,7 +213,7 @@ def _hash_file_obj_precache(file_obj, chunk_size) -> str:
         mm.close()
     return hfo
 
-hashing._hash_file_object = _hash_file_object_precache
+app.assets.hashing._hash_file_object = _hash_file_object_precache
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}

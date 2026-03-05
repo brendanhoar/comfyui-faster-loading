@@ -188,8 +188,8 @@ DEFAULT_CHUNK = 8 * 1024 *1024 # 8MB
 
 _patched_hash_file_object = hashing._hash_file_object
 
-def _hash_file_obj_precache(file_obj: IO, chunk_size: int = DEFAULT_CHUNK) -> str:
-    fileno=IO.fileno()       
+def _hash_file_obj_precache(file_obj, chunk_size) -> str:
+    fileno=file_obj.fileno()       
     if fileno != -1:
         fname = get_filename_from_fd(fileno)
         if fname and re.match(prefetch_pattern, fname, re.IGNORECASE):
@@ -209,7 +209,7 @@ def _hash_file_obj_precache(file_obj: IO, chunk_size: int = DEFAULT_CHUNK) -> st
             print(f"mmap() was called on a file, but it did not match the faster-loading file pattern.")
     else:
         print(f"mmap() was called, but not on a file object.")
-    hfo = _hash_file_object(IO, chunk_size: int = DEFAULT_CHUNK) 
+    hfo = _hash_file_object(file_obj, chunk_size) 
     if mm:
         mm.close()
     return hfo

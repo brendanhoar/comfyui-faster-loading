@@ -3,6 +3,7 @@ import torch
 import safetensors.torch
 import comfy
 import comfy.utils
+import app.assets.hashing as hashing
 
 from mmap import mmap, ACCESS_READ, ACCESS_COPY
 import os
@@ -12,6 +13,13 @@ import ctypes
 
 import logging
 import builtins
+
+from blake3 import blake3
+from typing import IO
+import os
+import asyncio
+
+prefetch_pattern = r".*\.(safetensors|sft|gguf|bin|pt|ckpt)$"
 
 # Save the original mmap constructor
 _original_mmap = mmap
@@ -57,12 +65,11 @@ def patched_mmap(fileno, length, *args, **kwargs):
     mm = _original_mmap(fileno, length, *args, **kwargs)
     
     # 2. Pattern to match (e.g., all .dat or .bin files)
-    pattern = r".*\.(safetensors|sft|gguf|bin|pt|ckpt)$"
-    
+        
     # 3. Check if fileno is a valid file (not -1 for anonymous memory)
     if fileno != -1:
         fname = get_filename_from_fd(fileno)
-        if fname and re.match(pattern, fname, re.IGNORECASE):
+        if fname and re.match(prefetch_pattern, fname, re.IGNORECASE):
             try:
                 prefetch_virtual_memory(mm)
                 if os.name == 'nt':
@@ -174,6 +181,40 @@ def _load_file_for_wsl(filename, device="cpu", *args, **kwargs):
 
 safetensors.torch.load_file = _load_file_for_wsl
 
+#-----------------------
+
+
+DEFAULT_CHUNK = 8 * 1024 *1024 # 8MB
+
+_patched_hash_file_object = hashing._hash_file_object
+
+def _hash_file_obj_precache(file_obj: IO, chunk_size: int = DEFAULT_CHUNK) -> str:
+    fileno=file_obj.fileno()       
+    if fileno != -1:
+        fname = get_filename_from_fd(fileno)
+        if fname and re.match(prefetch_pattern, fname, re.IGNORECASE):
+            try:
+                mm = mmap(fileno, length=0, access=ACCESS_COPY)
+                prefetch_virtual_memory(mm)
+                if os.name == 'nt':
+                    print(f"Applied PrefetchVirtualMemory to: {fname}")
+                else:
+                    print(f"Applied MADV_WILLNEED to: {fname}")
+            except Exception as e:
+                if os.name == 'nt':
+                    print(f"PrefetchVirtualMemory failed for {fname}: {e}")
+                else:
+                    print(f"MADV_WILLNEED marking failed for {fname}: {e}")
+        else:
+            print(f"mmap() was called on a file, but it did not match the faster-loading file pattern.")
+    else:
+        print(f"mmap() was called, but not on a file object.")
+    hfo = _hash_file_object(file_obj: IO, chunk_size: int = DEFAULT_CHUNK) 
+    if mm:
+        mm.close()
+    return hfo
+
+hashing._hash_file_object = _hash_file_object_precache
 
 NODE_CLASS_MAPPINGS = {}
 NODE_DISPLAY_NAME_MAPPINGS = {}

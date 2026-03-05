@@ -147,8 +147,6 @@ def _load_torch_file_with_precache(ckpt, safe_load=False, device=None, return_me
         logging.debug(f"Starting to mmap {ckpt}")
         if os.name == 'nt':
             m = mmap(f.fileno(), length=0, access=ACCESS_READ)
-        else:
-            m = mmap(f.fileno(), length=0, access=PROT_READ)
         logging.debug(f"Passing {ckpt} to torch_load_file")
         t = _load_torch_file_org(ckpt, safe_load, device, return_metadata) 
         logging.debug(f"Returned from torch_load_file of {ckpt}")

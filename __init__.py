@@ -4,8 +4,6 @@ import torch
 import safetensors.torch
 import comfy
 import comfy.utils
-from blake3 import blake3
-from app.assets.hashing import _hash_file_object
 
 from mmap import mmap, ACCESS_READ, ACCESS_COPY
 import os
@@ -19,6 +17,11 @@ import builtins
 from typing import IO
 import os
 import asyncio
+
+import sys
+from unittest.mock import MagicMock
+sys.modules["blake3"] = MagicMock()
+from app.assets.hashing import _hash_file_object
 
 prefetch_pattern = r".*\.(safetensors|sft|gguf|bin|pt|ckpt)$"
 

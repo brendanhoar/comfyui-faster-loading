@@ -4,6 +4,7 @@
 # 3. Use mmap to read instead of read(). Is there a way to populate the page cache from the storage without the copy of the data to process memory?
 # 4. Add PrefetchVirtualMemory before read, as it might maybe make it fast, or maybe not.
 # 5. If #1 does not suffice, add a heuristic that can tell if the file is mostly loaded into page cache or not (perhaps generate a random start page number, then read 4MB chunks spaced at 32MB distances, and check the timing?)
+# 6. Based on experiments, simply creating a memory map and marking the region as PrefetchVirtualMemory without reading the file does *not* make actual page faults (such as from CUDA DMA copies to the GPU) any faster. It has to be process reads of the page to get the OS to do the readahead.
 
 import time
 import torch

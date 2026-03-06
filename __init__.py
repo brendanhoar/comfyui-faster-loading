@@ -3,6 +3,7 @@
 # 2. Chunk reads into 64MB chunks to reduce system freezes during a system call.
 # 3. Use mmap to read instead of read(). Is there a way to populate the page cache from the storage without the copy of the data to process memory?
 # 4. Add PrefetchVirtualMemory before read, as it might maybe make it fast, or maybe not.
+# 5. If #1 does not suffice, add a heuristic that can tell if the file is mostly loading into page cache or not (perhaps generate a random start page number, then read 4MB chunks spaced at 32MB distances, and check the timing?)
 
 import time
 import torch

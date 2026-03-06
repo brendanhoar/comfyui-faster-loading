@@ -1,5 +1,5 @@
 # TODO
-# 1. Keep track of recent full reads of each filename, don't reread if less than x minutes since last request.
+# 1. Keep track of recent full reads of each filename, don't reread if less than x minutes since last request. I am seeing a lot more back-to-back calls to these with the same model path in recent comfyui releases.
 # 2. Chunk reads into 64MB chunks to reduce system freezes during a system call.
 # 3. Use mmap to read instead of read().
 # 4. Add PrefetchVirtualMemory before read, as it might maybe make it fast, or maybe not.
